@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<script src='bower_components/babel/browser.js'></script>
+	<script src='bower_components/react/react.js'></script>
+	<script src='bower_components/react/react-dom.js'></script>
+	<title>tab</title>
+	<style type="text/css">
+		.tab{width: 80%;border: 1px solid #ddd;background-color: #fff;}
+		.tab-head{list-style-type: none;padding: 0px;margin:0px;}
+		.tab-head:after{content: '';display: block;clear: both;}
+		.tab-head>.tab-head-item{float: left; cursor: pointer;border-right:1px solid #ddd;border-bottom: 1px solid #ddd;padding: 10px 20px; }
+		.tab-head>.tab-head-item.on{color: red}
+		.tab-cont{background-color: #ddd;padding: 20px;}
+/*		.tab-panel{display: none}
+		.tab-panel.show{display: block;}*/
+		.second .tab-head{background-color: #fff}
+		.second .tab-cont{background-color: #aaa;}
+	</style>
+</head>
+<body>
+	<div id="tab"></div>
+	<script type="text/babel">
+	var TabSet = React.createClass({
+		clickHandle: function(it){
+			this.setState({idx: it});
+		},
+		getInitialState: function(){
+			let index = 0;
+			React.Children.forEach(this.props.children,(c,idx) => {
+				if(c.props.className === 'show'){
+					index = idx;
+				}
+			});
+			return {idx: index};
+		},
+		render:function(){
+			let children = [],head = [];
+			React.Children.forEach(this.props.children,(c,idx) => {
+				if(c.type && c.type.displayName ==='Tab'){
+					this.state.idx === idx  && children.push(c);
+					head.push(<li className={'tab-head-item '+ (this.state.idx === idx ? 'on' : '')} onClick={this.clickHandle.bind(this,idx)} key={idx}>{c.props.heading}</li>)
+				}
+			});
+			return(
+				<div className={'tab' + " " + (this.props.className || '')}>
+					<ul className='tab-head'>
+						{head}
+					</ul>
+					<div className='tab-cont'>
+						{children}
+					</div>
+				</div>
+			)	
+		}
+	});
+	var Tab = React.createClass({
+		render: function(){
+			var childs = React.Children.map(this.props.children,function(c){
+				if(c.type && c.type.displayName === 'TabSet'){
+					return <TabSet className = {c.props.className}>{c.props.children}</TabSet>
+				}else{
+					return c;
+				}
+			},this);
+			return (
+				<div className='tab-panel'>
+					{childs}
+				</div>
+			);
+		}
+	});
+	ReactDOM.render((
+		<TabSet>
+			<Tab heading='123'>123</Tab>
+			<Tab heading='123' className="show">
+				<TabSet className="second">
+					<Tab heading="456">sub tab1</Tab>
+					<Tab heading="456">sub tab2</Tab>
+					<Tab heading="456">
+						<TabSet>
+							<Tab heading="789">sub-sub tab1</Tab>
+							<Tab heading="789">sub-sub tab2</Tab>
+							<Tab heading="789">sub-sub tab3</Tab>
+						</TabSet>
+					</Tab>
+				</TabSet>
+				<TabSet className="second">
+					<Tab heading='2'>2</Tab>
+					<Tab heading='3'>3</Tab>
+				</TabSet>
+			</Tab>
+			<Tab heading='123'>123</Tab>
+		</TabSet>),
+		document.getElementById('tab')
+	)
+	</script>
+
+</body>
+</html>

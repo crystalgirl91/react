@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title></title>
+	<script src="bower_components/jquery/dist/jquery.js"></script>
+	<script src="bower_components/react/react.js"></script>
+	<script src="bower_components/react/react-dom.js"></script>
+	<script src="bower_components/babel/browser.js"></script>
+</head>
+<body>
+	<div id="wraper"></div>
+	<div id="ip"></div>
+	<div id="myip"></div>
+	<script type="text/babel">
+		var getSibling = function(cur,dir){
+			while((cur = cur[dir]) && cur.nodeType !== 1){}
+			return cur;
+		}
+		HTMLElement.prototype.next = function(selector){
+			var matched = this.parentNode.querySelectorAll(selector);
+			var cur = this;
+			while((cur = getSibling(cur,'nextSibling')) && Array.prototype.slice.call(matched).indexOf(cur) === -1){};
+			return cur;
+		};
+		
+		HTMLElement.prototype.prev = function(selector) {
+			var matched = this.parentNode.querySelectorAll(selector);
+			var cur = this;
+			while((cur = getSibling(cur,'previousSibling')) && Array.from(matched).indexOf(cur) === -1){}
+			return cur;
+		};
+
+		//自定义插件
+		var reg = /^(\d{1,3}\.){3}\d{1,3}$/;
+
+		var updateState = function(_this){
+			var self = _this;
+			var wrapper = self.refs.wrap;
+			var vals = Array.from(wrapper.querySelectorAll('.segment')).map(item => item.value);
+			var IP = vals.every(function(val){ return val.trim().length === 0}) ? '' : vals.join('.');
+			self.setState({all_ip: IP});
+		};
+		function hasClass(str,dom){
+			if(typeof str === 'string' && dom instanceof HTMLElement){
+				return dom.classList.contains(str);
+			}else{
+				return false;
+			}
+		}
+		var IpInput = React.createClass({
+			style1:{
+				border:'0px',
+				width:'25%',
+				outline:'none',
+				display: 'inline-bloxk',
+				textAlign: 'center',
+			},
+			style_dot: {
+				position:'relative',
+				width:'0px',
+				right:'0px',
+				display: 'inline-block',
+			},
+			getInitialState: function(){
+				var all_ip = reg.test(this.props.value) ? this.props.value : '';
+				return {
+					all_ip : all_ip,
+				}
+			},
+			changeHandle: function(e){
+				var val = e.target.value;
+				if(/^\d{0,3}$/.test(val)){
+					updateState(this);
+				}
+			},
+			keydownHandle: function(e){
+				var _code = e.keyCode;
+				var _target = e.target;
+				var _next_target = _target.next('.segment');
+				var _pre_target = _target.prev('.segment');
+				var _num_code = [48, 49, 50, 51, 52, 53, 54, 55, 56, 57,96, 97, 98, 99, 100, 101, 102, 103, 104, 105];
+				var _ctr_code = [110,108,112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123,8,9,20,37,38,39,40,46,144];
+				if(_num_code.indexOf(_code) > -1){
+					return;
+				}
+				if(_ctr_code.indexOf(_code) > -1){
+					switch(_code){
+						// .
+						case 110:
+						case 190:
+							_next_target && _next_target.focus();
+							break;
+						//backspace	
+						case 8:
+							if(!_target.value && _pre_target && hasClass('segment', _pre_target)){
+								_pre_target.focus();
+							}
+					}
+				}else{
+					e.preventDefault();
+				}
+			},
+			render: function(){
+				var ip_arr = this.state.all_ip.split('.');
+				return (
+					<div ref='wrap' style={{border:'1px solid #ddd',width: '120px'}}>
+						<input id='all_ip' value={this.state.all_ip} style={{display:'none'}} readOnly></input>
+						<input className='segment' style={this.style1} value={ip_arr[0]} onKeyDown={this.keydownHandle} onChange={this.changeHandle}></input><span className='dot' style={this.style_dot}>.</span>
+						<input className='segment' style={this.style1} value={ip_arr[1]} onKeyDown={this.keydownHandle} onChange={this.changeHandle}></input><span className='dot' style={this.style_dot}>.</span>
+						<input className='segment' style={this.style1} value={ip_arr[2]} onKeyDown={this.keydownHandle} onChange={this.changeHandle}></input><span className='dot' style={this.style_dot}>.</span>
+						<input className='segment' style={this.style1} value={ip_arr[3]} onKeyDown={this.keydownHandle} onChange={this.changeHandle}></input>
+					</div>
+				);
+			}
+		});
+
+		ReactDOM.render(<IpInput value='10.1.1.1'/>,document.getElementById('myip'));
+	</script>
+</body>
+</html>

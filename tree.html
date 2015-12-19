@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title></title>
+	<!--<script src="bower_components/jquery/dist/jquery.js"></script>-->
+	<script src="bower_components/react/react-with-addons.js"></script>
+	<script src="bower_components/react/react-dom.js"></script>
+	<script src="bower_components/babel/browser.js"></script>
+
+	<style type="text/css">
+		body{font-family: '微软雅黑'}
+		ul{
+			list-style: none;
+		}
+		li{
+			cursor: pointer;
+		}
+		.icon-tree:before{
+			content: "";
+			width: 10px;
+			display: inline-block;
+			margin-right: 5px;
+		}
+		.icon-tree.icon-tree-open:before{
+			content: "+";
+		}
+		.icon-tree.icon-tree-close:before{
+			content: "-";
+		}
+		.example-enter {
+		height: 0px;
+		overflow: hidden;
+		-webkit-transition: height 2s;
+		-o-transition: height 2s;
+		transition: height 2s;
+		}
+
+		.example-enter.example-enter-active {
+			height: auto;
+		}
+		.example-leave {
+		  height: auto;
+		  overflow: hidden;
+		  -webkit-transition: height 2s;
+			-o-transition: height 2s;
+			transition: height 2s;
+		}
+
+		.example-leave.example-leave-active {
+		  height: 0;
+		}
+		
+		.square{height: 200px; -webkit-transition: height 2s;
+		-o-transition: height 2s;
+		background: #ddd;
+		transition: height 2s;}
+		.square:hover{
+			height: 300px;
+		}
+
+		.map{width: 300px;height: 300px;background: red}
+	</style>
+</head>
+<body>
+	<div id="ip"></div>
+	<div id="tree"></div>
+	<div id="menu"></div>
+	<script type="text/babel">
+	var $get = function(url){
+		var promise = new Promise(function(resolve,reject){
+			var xhr = new XMLHttpRequest();
+			xhr.open('GET',url);
+			xhr.onload = function(){
+				resolve(xhr.responseText);
+			};
+			xhr.onerror = function(){
+				reject(xhr.statusText);
+			};
+			xhr.send();
+		});
+		return promise;
+	}
+	var ReactCSSTransitionGroup = React.addons.CSSTransitionGroup;
+	// tree
+	var Tree = React.createClass({
+		clickHandle: function(){
+			this.setState({open: !this.state.open})
+		},
+		getInitialState: function(){
+			return {open: false}
+		},
+		render: function(){
+			return (
+				<ul>
+					<Item 
+						data = {this.props.data}
+						open = {this.state.open}
+						onClick= {this.clickHandle}></Item>
+				</ul>
+			);
+		}
+	});
+
+	var Item = React.createClass({
+		activeHandle: function(cur){
+			this.props.data.submenu.length > 0 && this.props.data.submenu.forEach(function(item){
+				if(item === cur){
+					cur.active = cur.active ? false : true;
+				}else{
+					item.active = false;
+				}
+			});
+			this.setState({open : !this.state.open});
+		},
+		clickHandle: function(cur,e){
+			e.stopPropagation();
+			if(!cur.submenu || cur.submenu.length < 1) return;
+			this.activeHandle(cur);
+		},
+		getInitialState: function(){
+			return {open: this.props.open}
+		},
+		componentDidLeave: function(){
+			console.log(333,'leaver')
+		},
+		render: function(){
+			let sublis;
+			let self = this;
+			let iconClassName = (this.props.data.submenu && this.props.data.submenu.length > 0) ? (this.props.open ? 'icon-tree-close' : 'icon-tree-open') : '';
+			if(this.props.open && this.props.data.submenu && this.props.data.submenu.length > 0){
+				sublis = (
+					<ul>
+						{ this.props.data.submenu.map(function(item){
+								return (
+									<Item 
+										data = { item } 
+										key = {item.text}
+										open = {item.active ? true : false}
+										onClick = {this.clickHandle.bind(this,item)}
+									></Item>
+								);
+							},this)
+						}
+					</ul>
+				);
+			}
+			return (
+				<li onClick={ this.props.onClick } data-open={this.props.open}>
+					<i className={'icon-tree' + ' ' + iconClassName}></i>
+					<span>{ this.props.data.text }</span>
+					<ReactCSSTransitionGroup  transitionName="example" transitionEnterTimeout={2000} transitionLeaveTimeout={2000}>
+						{ sublis }
+					</ReactCSSTransitionGroup>
+				</li>
+				
+			);
+		}
+	});
+
+	$get('data.json').then(function(res){
+		ReactDOM.render(<Tree data={ JSON.parse(res)}></Tree>,document.querySelector('#tree'));
+	});
+	
+	</script>
+</body>
+</html>

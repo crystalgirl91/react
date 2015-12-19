@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Pagination</title>
+	<link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.css">
+	<script src='bower_components/react/react.js'></script>
+	<script src='bower_components/react/react-dom.js'></script>
+	<script src='browser.js'></script>
+</head>
+<body>
+	<div id="wrapper"></div>
+	<script type="text/babel">
+		var Pagination = React.createClass({
+			propTypes:{
+				totalLen:React.PropTypes.number,
+				perLen:React.PropTypes.number,
+				curPage:React.PropTypes.number,
+				appearCount:React.PropTypes.number
+			},
+			getInitialState:function(){
+				return {cur_idx : this.props.curPage >=0 ? this.props.curPage :  0}
+			},
+			getPageCount:function(){
+				return Math.ceil(this.props.totalLen/this.props.perLen);
+			},
+			changePage:function(arg){
+				let idx;				
+				let len = this.getPageCount();
+				if(typeof arg === "string"){
+					switch(arg){
+						case 'begin':
+							idx = 0;
+							break;
+						case "end":
+							idx = len - 1;
+							break;
+						case 'prev':
+							idx = this.state.cur_idx > 0 ? this.state.cur_idx - 1 : 0;
+							break;
+						case 'next':
+							idx = this.state.cur_idx < len -1 ? this.state.cur_idx + 1 : len - 1;
+							break;						
+					}
+				}
+				if(typeof arg === "number"){
+					idx = arg;
+				}
+				this.setState({cur_idx : idx});
+			},
+			getChildren:function(){
+				let arr = Array(this.getPageCount());
+				let cur = this.state.cur_idx;
+				let count = this.props.appearCount > 1 ? this.props.appearCount : 10;
+				let start = cur - Math.floor(count/2);
+				let end = start + count;
+				for(let i = 0 ; i < arr.length ; i++){
+					arr[i] = (
+						<Pagination.item 
+						key = {i}
+						clickHandle={this.changePage.bind(this,i)}
+						isActive={this.state.cur_idx === i}
+						>{ i + 1}</Pagination.item>
+						);
+				}
+				if(start < 0){
+					arr = arr.splice(0,count);
+				}
+				else if(end > arr.length-1){
+					arr = arr.splice(arr.length - count, count);
+				}
+				else{
+					arr = arr.slice(start,end);
+				}
+				return arr;
+			},
+			render:function(){
+				let len = this.getPageCount();
+				return (
+					<ul className="pagination">
+						<li className={this.state.cur_idx === 0 ? "disabled": '' } onClick={this.changePage.bind(this,"begin")}><a href="javascript:void(0)">begin</a></li>
+						<li className={this.state.cur_idx === 0 ? "disabled": '' } onClick={this.changePage.bind(this,"prev")}><a href="javascript:void(0)"><span aria-hidden="true">«</span></a></li>
+						{this.getChildren()}
+						<li className={this.state.cur_idx === len - 1 ? "disabled": '' } onClick={this.changePage.bind(this,"next")}><a href="javascript:void(0)"><span aria-hidden="true">»</span></a></li>
+						<li className={this.state.cur_idx === len - 1 ? "disabled": '' } onClick={this.changePage.bind(this,"end")}><a href="javascript:void(0)">end</a></li>
+
+					</ul>
+				)
+			}
+		});
+		Pagination.item = React.createClass({
+			render:function(){
+				return (<li onClick={this.props.clickHandle} className={this.props.isActive ? 'active' : ''}><a href="javascript:void(0)">{this.props.children}</a></li>)
+			}
+		});
+		ReactDOM.render(
+			<Pagination totalLen={100} perLen={10} curPage={2} appearCount={6}></Pagination>
+			,document.getElementById('wrapper')
+		)
+	</script>
+	
+</body>
+</html>
